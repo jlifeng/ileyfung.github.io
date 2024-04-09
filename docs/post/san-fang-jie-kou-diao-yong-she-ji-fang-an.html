@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html data-color-mode="light" data-dark-theme="dark" data-light-theme="light" lang="zh-CN">
+<head>
+    <meta content="text/html; charset=utf-8" http-equiv="content-type" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <link href="//cdn.staticfile.net/Primer/21.0.7/primer.css" rel="stylesheet" />
+    <link rel="icon" href="https://github.githubassets.com/favicons/favicon.svg"><script>
+        let theme = localStorage.getItem("meek_theme") || "light";
+        document.documentElement.setAttribute("data-color-mode", theme);
+    </script>
+<meta name="description" content="三方接口调用设计方案">
+<title>三方接口调用设计方案</title>
+
+
+</head>
+<style>
+body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;padding: 45px;font-size: 16px;font-family: sans-serif;line-height: 1.25;}
+#header{display:flex;padding-bottom:8px;border-bottom: 1px solid var(--borderColor-muted, var(--color-border-muted));margin-bottom: 16px;}
+#footer {margin-top:64px; text-align: center;font-size: small;}
+
+</style>
+
+<style>
+.postTitle{margin: auto 0;font-size:40px;font-weight:bold;}
+.title-right{display:flex;margin:auto 0 0 auto;}
+.title-right .circle{padding: 14px 16px;margin-right:8px;}
+#postBody{border-bottom: 1px solid var(--color-border-default);padding-bottom:36px;}
+#postBody hr{height:2px;}
+#cmButton{height:48px;margin-top:48px;}
+#comments{margin-top:64px;}
+.g-emoji{font-size:24px;}
+@media (max-width: 600px) {
+    body {padding: 8px;}
+    .postTitle{font-size:24px;}
+}
+</style>
+
+
+
+
+<body>
+    <div id="header">
+<h1 class="postTitle">三方接口调用设计方案</h1>
+<div class="title-right">
+    <a href="https://ileyfung.github.io" id="buttonHome" class="btn btn-invisible circle" title="首页">
+        <svg class="octicon" width="16" height="16">
+            <path id="pathHome" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+    
+    <a href="https://github.com/ileyfung/ileyfung.github.io/issues/3" target="_blank" class="btn btn-invisible circle" title="Issue">
+        <svg class="octicon" width="16" height="16">
+            <path id="pathIssue" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+    
+
+    <a class="btn btn-invisible circle" onclick="modeSwitch();" title="切换主题">
+        <svg class="octicon" width="16" height="16" >
+            <path id="themeSwitch" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+
+</div>
+</div>
+    <div id="content">
+<div class="markdown-body" id="postBody"><p>在为第三方系统提供接口的时候，肯定要考虑接口数据的安全问题，比如<strong>数据是否被篡改</strong>，<strong>数据是否已经过时</strong>，<strong>数据是否可以重复提交</strong>等问题<br>
+在设计三方接口调用的方案时，需要考虑到安全性和可用性。以下是一种设计方案的概述，其中包括使用API密钥（Access Key/Secret Key）进行身份验证和设置回调地址。</p>
+<h2>设计方案概述</h2>
+<ol>
+<li><strong>API密钥生成</strong>：为每个三方应用生成唯一的API密钥对（AK/SK），其中AK用于标识应用，SK用于进行签名和加密。</li>
+</ol>
+<blockquote>
+<p>AK：Access Key Id,用于标示用户。<br>
+SK：Secret Access Key,是用户用于加密认证字符串和用来验证认证字符串的密钥，其中SK必须保密。<br>
+通过使用Access Key Id / Secret Access Key加密的方法来验证某个请求的发送者身份。</p>
+</blockquote>
+<ol start="2">
+<li><strong>接口鉴权</strong>：在进行接口调用时，客户端需要使用AK和请求参数生成签名，并将其放入请求头或参数中以进行身份验证。</li>
+</ol>
+<blockquote>
+<p>淘宝签名和验签：<br>
+<a href="https://www.yuque.com/u12226311/ttgrez/mxy16ld5h2tw7xhx" rel="nofollow">淘宝SDK签名算法 (yuque.com)</a></p>
+</blockquote>
+<ol start="3">
+<li><strong>回调地址设置</strong>：三方应用提供回调地址，用于接收异步通知和回调结果。</li>
+<li><strong>接口API设计</strong>：设计接口的URL、HTTP方法、请求参数、响应格式等细节。</li>
+</ol>
+<h2>权限划分</h2>
+<ul>
+<li>appID：<strong>应用的唯一标识</strong></li>
+</ul>
+<blockquote>
+<p>用来标识你的开发者账号的, 即:<code class="notranslate">用户id</code>, 可以在数据库添加索引，方便快速查找，同一个 appId 可以对应多个 appKey+appSecret，达到权限的</p>
+</blockquote>
+<ul>
+<li>appKey：<strong>公匙（相当于账号）</strong></li>
+</ul>
+<blockquote>
+<p>公开的，调用服务所需要的密钥。是用户的身份认证标识，用于调用平台可用服务.，可以简单理解成是账号。</p>
+</blockquote>
+<ul>
+<li>appSecret：<strong>私匙（相当于密码）</strong></li>
+</ul>
+<blockquote>
+<p>签名的密钥，是跟appKey配套使用的，可以简单理解成是密码。</p>
+</blockquote>
+<ul>
+<li>token：令牌（过期失效）</li>
+</ul>
+<p><strong>使用方法</strong></p>
+<ol>
+<li>向第三方服务器请求授权时，带上<code class="notranslate">AppKey和AppSecret</code>（需存在服务器端）</li>
+<li>第三方服务器验证<code class="notranslate">appKey和appSecret</code>在数据库、缓存中有没有记录</li>
+<li>如果有，生成一串唯一的字符串<code class="notranslate">（token令牌）</code>，返回给服务器，服务器再返回给客户端</li>
+<li>后续客户端每次请求都需要带上token令牌</li>
+</ol>
+<p><strong>为什么 要有appKey + appSecret 这种成对出现的机制呢,?</strong></p>
+<ul>
+<li>因为<code class="notranslate">要加密</code>, <code class="notranslate">通常用在首次验证(类似登录场景)</code>, 用 <code class="notranslate">appKey(标记要申请的权限有哪些)</code> + <code class="notranslate">appSecret(密码, 表示你真的拥有这个权限)</code>来申请一个token, 就是我们经常用到的 <code class="notranslate">accessToken（通常拥有失效时间）</code>, 后续的每次请求都需要提供accessToken 表明验证权限通过。</li>
+</ul>
+<blockquote>
+<p>现在有了统一的appId，此时如果针对同一个业务要划分不同的权限，比如同一功能，某些场景需要只读权限，某些场景需要读写权限。这样提供一个appId和对应的秘钥appSecret就没办法满足需求。 此时就需要<code class="notranslate">根据权限进行账号分配</code>，<code class="notranslate">通常使用appKey和appSecret。</code></p>
+</blockquote>
+<ul>
+<li>由于 <code class="notranslate">**appKey 和 appSecret 是成对出现的账号**</code><strong>, <code class="notranslate">**同一个 appId 可以对应多个 appKey+appSecret,**</code> 这样平台就为</strong><code class="notranslate">**不同的appKey+appSecret对**</code><strong>分配不一样的权限,</strong>
+<ul>
+<li>可以生成两对appKey和appSecret。一个用于删除，一个用于读写，达到权限的细粒度划分。如 : appKey1 + appSecect1 只有删除权限 但是 appKey2+appSecret2 有读写权限… 这样你就可以把对应的权限 放给不同的开发者。其中<code class="notranslate">权限的配置都是直接跟appKey 做关联的</code>, appKey 也需要添加数据库索引, 方便快速查找</li>
+</ul>
+</li>
+</ul>
+<hr>
+<p><strong>简化的场景</strong>:</p>
+<ul>
+<li>第一种场景：通常用于开放性接口，像地图api，<code class="notranslate">会省去app_id和app_key</code>，此时相当于三者相等，合而为一 <code class="notranslate">appId = appKey = appSecret,</code> 。这种模式下，带上app_id的目的仅仅是统计某一个用户调用接口的次数而已了。</li>
+<li>第二种场景: 当每一个用户有且仅有一套权限配置 可以<code class="notranslate">去掉 appKey,</code> , 直接将<code class="notranslate">app_id = app_key</code>, 每个用户分配一个<code class="notranslate">appId+ appSecret</code>就够了`.</li>
+</ul>
+<p><strong>也可以</strong></p>
+<blockquote>
+<p>可以采用签名(signature)的方式： 当调用方向服务提供方法发起请求时，带上（<code class="notranslate">appKey、时间戳timeStamp、随机数nonce、签名sign</code>） 签名sign 可以使用 <code class="notranslate">(AppSecret + 时间戳 + 随机数)</code>使用<code class="notranslate">sha1、md5</code>生成，服务提供方收到后，生成本地签名和收到的签名比对，如果一致，校验成功</p>
+</blockquote>
+<h2>签名流程</h2>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/62fe93c441bec5624a0cb66a894f6b060e75cb1aeff0fdaa394511f709cc93f7/68747470733a2f2f63646e2e6e6c61726b2e636f6d2f79757175652f302f323032342f706e672f31323439313234392f313731323635303538393332302d61616663306239322d303633372d343831332d616135352d3435353163323064376636642e706e6723617665726167654875653d25323366616661666126636c69656e7449643d7536303330643532612d313032622d342666726f6d3d70617374652669643d753339643935653361266f726967696e4865696768743d343936266f726967696e57696474683d31303830266f726967696e616c547970653d75726c26726174696f3d3126726f746174696f6e3d302673686f775469746c653d66616c73652673697a653d3937333835267374617475733d646f6e65267374796c653d6e6f6e65267461736b49643d7532636633373335322d626533612d346537332d616634312d6433613235353865393130267469746c653d"><img src="https://camo.githubusercontent.com/62fe93c441bec5624a0cb66a894f6b060e75cb1aeff0fdaa394511f709cc93f7/68747470733a2f2f63646e2e6e6c61726b2e636f6d2f79757175652f302f323032342f706e672f31323439313234392f313731323635303538393332302d61616663306239322d303633372d343831332d616135352d3435353163323064376636642e706e6723617665726167654875653d25323366616661666126636c69656e7449643d7536303330643532612d313032622d342666726f6d3d70617374652669643d753339643935653361266f726967696e4865696768743d343936266f726967696e57696474683d31303830266f726967696e616c547970653d75726c26726174696f3d3126726f746174696f6e3d302673686f775469746c653d66616c73652673697a653d3937333835267374617475733d646f6e65267374796c653d6e6f6e65267461736b49643d7532636633373335322d626533612d346537332d616634312d6433613235353865393130267469746c653d" alt="image.jpg" data-canonical-src="https://cdn.nlark.com/yuque/0/2024/png/12491249/1712650589320-aafc0b92-0637-4813-aa55-4551c20d7f6d.png#averageHue=%23fafafa&amp;clientId=u6030d52a-102b-4&amp;from=paste&amp;id=u39d95e3a&amp;originHeight=496&amp;originWidth=1080&amp;originalType=url&amp;ratio=1&amp;rotation=0&amp;showTitle=false&amp;size=97385&amp;status=done&amp;style=none&amp;taskId=u2cf37352-be3a-4e73-af41-d3a2558e910&amp;title=" style="max-width: 100%;"></a></p>
+<h2>签名规则</h2>
+<ol>
+<li><strong>分配</strong><code class="notranslate">appId(开发者标识)</code>和<code class="notranslate">appSecret(密钥)</code>，给 <code class="notranslate">不同的调用方</code></li>
+</ol>
+<blockquote>
+<p>可以直接通过平台线上申请，也可以线下直接颁发。appId是全局唯一的，每个appId将对应一个客户，密钥appSecret需要高度保密。</p>
+</blockquote>
+<ol start="2">
+<li>加入<code class="notranslate">timeStamp</code>（时间戳），以服务端当前时间为准，单位为ms ，5分钟内数据有效</li>
+</ol>
+<blockquote>
+<p>时间戳的目的就是为了减轻DOS攻击。防止请求被拦截后一直尝试请求接口。服务器端设置时间戳阀值，如果<code class="notranslate">服务器时间 减 请求时间戳</code>超过阀值，表示签名超时，接口调用失败。</p>
+</blockquote>
+<ol start="3">
+<li>加入<strong>临时流水号</strong><code class="notranslate">nonce</code>，<em>至少为10位</em> ，<code class="notranslate">有效期内防重复提交</code>。</li>
+</ol>
+<blockquote>
+<p>随机值nonce 主要是为了<code class="notranslate">增加签名sign的多变性</code>，也可以<code class="notranslate">保护接口的幂等性</code>，相邻的两次请求nonce不允许重复，如果重复则认为是重复提交，接口调用失败。</p>
+<ul>
+<li>针对<strong>查询接口</strong>，流水号只用于日志落地，便于后期日志核查。</li>
+<li>针对<strong>办理类接口</strong>需校验流水号在有效期内的唯一性，以避免重复请求。</li>
+</ul>
+</blockquote>
+<p>通过在接口签名请求参数加上 时间戳timeStamp + 随机数nonce 可以防止 ”重放攻击“<br>
+1.时间戳（timeStamp）:<br>
+以服务端当前时间为准，服务端要求客户端发过来的时间戳，必须是最近60秒内（假设值，自己定义）的。<br>
+这样，即使这个请求即使被截取了，也只能在60s内进行重放攻击。<br>
+2.随机数（nonce）:<br>
+但是，即使设置了时间戳，攻击者还有60s的攻击时间呢！<br>
+所以我们需要在客户端请求中再加上一个随机数（中间黑客不可能自己修改随机数，因为有参数签名的校验呢），<br>
+服务端会对一分钟内请求的随机数进行检查，如果有两个相同的，基本可以判定为重放攻击。<br>
+因为正常情况下，在短时间内（比如60s）连续生成两个相同nonce的情况几乎为0<br>
+服务端“第一次”在接收到这个nonce的时候做下面行为：<br>
+1.去redis中查找是否有key为nonce:{ nonce}的数据<br>
+2.如果没有，则创建这个key，把这个key失效的时间和验证timestamp失效的时间一致，比如是60s。<br>
+3.如果有，说明这个key在60s内已经被使用了，那么这个请求就可以判断为重放请求。</p>
+<ol start="4">
+<li>加入签名字段<code class="notranslate">sign</code>，获取调用方传递的签名信息。</li>
+</ol>
+<p>通过在接口签名请求参数加上 时间戳appId + sign 解决身份验证和防止 ”参数篡改“<br>
+1.请求携带参数appId和Sign，只有拥有合法的身份appId和正确的签名Sign才能放行。这样就解决了身份验证和参数篡改问题。<br>
+2.即使请求参数被劫持，由于获取不到appSecret（仅作本地加密使用，不参与网络传输），也无法伪造合法的请求。<br>
+<code class="notranslate">**以上字段放在请求头中。**</code></p>
+<h2>API接口设计</h2>
+<p>根据你的具体需求和业务场景，以下是一个简单示例的API接口设计：</p>
+<h3>1. 获取资源列表接口</h3>
+<ul>
+<li>URL: /api/resources</li>
+<li>HTTP 方法: GET</li>
+<li>请求参数:
+<ul>
+<li>page (可选): 页码</li>
+<li>limit (可选): 每页限制数量</li>
+</ul>
+</li>
+<li>响应:
+<ul>
+<li>成功状态码: 200 OK</li>
+<li>响应体: 返回资源列表的JSON数组</li>
+</ul>
+</li>
+</ul>
+<h3>2. 创建资源接口</h3>
+<ul>
+<li>URL: /api/resources</li>
+<li>HTTP 方法: POST</li>
+<li>请求参数:
+<ul>
+<li>name (必填): 资源名称</li>
+<li>description (可选): 资源描述</li>
+</ul>
+</li>
+<li>响应:
+<ul>
+<li>成功状态码: 201 Created</li>
+<li>响应体: 返回新创建资源的ID等信息</li>
+</ul>
+</li>
+</ul>
+<h3>3. 更新资源接口</h3>
+<ul>
+<li>URL: /api/resources/{resourceId}</li>
+<li>HTTP 方法: PUT</li>
+<li>请求参数:
+<ul>
+<li>resourceId (路径参数, 必填): 资源ID</li>
+<li>name (可选): 更新后的资源名称</li>
+<li>description (可选): 更新后的资源描述</li>
+</ul>
+</li>
+<li>响应:
+<ul>
+<li>成功状态码: 200 OK</li>
+</ul>
+</li>
+</ul>
+<h3>4. 删除资源接口</h3>
+<ul>
+<li>URL: /api/resources/{resourceId}</li>
+<li>HTTP 方法: DELETE</li>
+<li>请求参数:
+<ul>
+<li>resourceId (路径参数, 必填): 资源ID</li>
+</ul>
+</li>
+<li>响应:
+<ul>
+<li>成功状态码: 204 No Content</li>
+</ul>
+</li>
+</ul>
+<h2>安全性考虑</h2>
+<p>为了确保安全性，可以采取以下措施：</p>
+<ul>
+<li>使用HTTPS协议进行数据传输，以保护通信过程中的数据安全。</li>
+<li>在请求中使用AK和签名进行身份验证，并对请求进行验签，在服务端进行校验和鉴权，以防止非法请求和重放攻击。</li>
+<li>对敏感数据进行加密传输，例如使用TLS加密算法对敏感数据进行加密。</li>
+</ul>
+<p>以上是一个简单的设计方案和API接口设计示例。具体的实现细节可能因项目需求而有所不同。在实际开发中，还要考虑错误处理、异常情况处理、日志记录等方面。<br>
+防止重放攻击和对敏感数据进行加密传输都是保护三方接口安全的重要措施。以下是一些示例代码，展示了如何实现这些功能。</p>
+<h3>防止重放攻击</h3>
+<p>抓取报文原封不动重复发送如果是<code class="notranslate">付款接口，或者购买接口</code>就会造成损失，因此需要采用防重放的机制来做请求验证，如请求参数上加上<code class="notranslate">timestamp时间戳+nonce随机数</code>。<br>
+重放攻击是指黑客通过抓包的方式，得到客户端的请求数据及请求连接，重复的向服务器发送请求的行为。</p>
+<blockquote>
+<p>时间戳(tamp) + 数字签名(sign)， 也就是说每次发送请求时多传两个参数，分别为 tamp 和 sign。</p>
+</blockquote>
+<p>数字签名的作用是为了确保请求的有效性。因为签名是经过加密的，只有客户端和服务器知道加密方式及密钥（key），所以第三方模拟不了。我们通过对sign的验证来判断请求的有效性，如果sign验证失败则判定为无效的请求，反之有效。 但是数字签名并不能阻止重放攻击，因为黑客可以抓取你的tamp和sign（不需做任何修改），然后发送请求。这个时候就要对时间戳进行验证。<br>
+时间戳的作用是为了确保请求的时效性。我们将上一次请求的时间戳进行存储，在下一次请求时，将两次时间戳进行比对。如果此次请求的时间戳和上次的相同或小于上一次的时间戳，则判定此请求为过时请求，无效。因为正常情况下，第二次请求的时间肯定是比上一次的时间大的，不可能相等或小于。<br>
+如果修改了时间戳来满足时间的时效性，sign验签就不通过了。<br>
+<em>注：如果客户端是js，一定要对js做代码混淆，禁止右键等。</em></p>
+<h4>1. 使用Nonce和Timestamp</h4>
+<p>在请求中添加唯一的Nonce（随机数）和Timestamp（时间戳），并将其包含在签名计算中。服务端在验证签名时，可以检查Nonce和Timestamp的有效性，并确保请求没有被重放。<br>
+防止重放攻击是在三方接口中非常重要的安全措施之一。使用Nonce（一次性随机数）和Timestamp（时间戳）结合起来，可以有效地防止重放攻击。下面是实现此功能的最佳实践：</p>
+<ol>
+<li>生成Nonce和Timestamp：
+<ul>
+<li>Nonce应该是一个随机的、唯一的字符串，可以使用UUID或其他随机字符串生成算法来创建。</li>
+<li>Timestamp表示请求的时间戳，通常使用标准的Unix时间戳格式（以秒为单位）。</li>
+</ul>
+</li>
+<li>在每个请求中包含Nonce和Timestamp：
+<ul>
+<li>将生成的Nonce和Timestamp作为参数添加到每个请求中，可以通过URL参数、请求头或请求体的方式进行传递。</li>
+<li>确保Nonce和Timestamp在每个请求中都是唯一且正确的。</li>
+</ul>
+</li>
+<li>服务器端验证Nonce和Timestamp：
+<ul>
+<li>在服务器端接收到请求后，首先验证Nonce和Timestamp的有效性。</li>
+<li>检查Nonce是否已经被使用过，如果已经被使用过，则可能是重放攻击，拒绝该请求。</li>
+<li>检查Timestamp是否在合理的时间范围内，如果超出预定的有效期，则认为请求无效。</li>
+</ul>
+</li>
+<li>存储和管理Nonce：
+<ul>
+<li>为了验证Nonce是否已经被使用过，服务器需要存储已经使用过的Nonce。</li>
+<li>可以使用数据库、缓存或其他持久化存储方式来管理Nonce的状态。</li>
+<li>需要定期清理过期的Nonce，以防止存储占用过多的资源。</li>
+</ul>
+</li>
+<li>设置有效期：
+<ul>
+<li>为了限制请求的有效时间范围，可以设置一个合理的有效期。</li>
+<li>根据实际需求和业务场景，选择适当的有效期，例如几分钟或几小时。</li>
+</ul>
+</li>
+</ol>
+<p>通过使用Nonce和Timestamp来防止重放攻击，可以保护三方接口免受恶意重放请求的影响。以上是实现该功能的最佳实践，但具体的实现方法可能因应用程序和技术栈的不同而有所差异。确保在设计和实施安全措施时考虑到应用程序的特定需求和风险模型。</p>
+<h4>2. 添加过期时间</h4>
+<p>在请求中添加一个过期时间字段（例如，token的有效期），并在服务端验证请求的时间戳是否在有效期内。超过过期时间的请求应被拒绝。</p>
+<h4>防篡改、防重放攻击拦截器</h4>
+<p>每次HTTP请求，都需要加上timestamp参数，然后把timestamp和其他参数一起进行数字签名。HTTP请求从发出到达服务器一般都不会超过60s，所以服务器收到HTTP请求之后，首先判断时间戳参数与当前时间相比较，是否超过了60s，如果超过了则认为是非法的请求。<br>
+一般情况下,从抓包重放请求耗时远远超过了60s，所以此时请求中的timestamp参数已经失效了,如果修改timestamp参数为当前的时间戳，则signature参数对应的数字签名就会失效，因为不知道签名秘钥，没有办法生成新的数字签名。<br>
+但这种方式的漏洞也是显而易见的，如果在60s之后进行重放攻击，那就没办法了，所以这种方式不能保证请求仅一次有效<br>
+nonce的作用<br>
+nonce的意思是仅一次有效的随机字符串，要求每次请求时，该参数要保证不同。我们将每次请求的nonce参数存储到一个“集合”中，每次处理HTTP请求时，首先判断该请求的nonce参数是否在该“集合”中，如果存在则认为是非法请求。<br>
+nonce参数在首次请求时，已经被存储到了服务器上的“集合”中，再次发送请求会被识别并拒绝。<br>
+nonce参数作为数字签名的一部分，是无法篡改的，因为不知道签名秘钥，没有办法生成新的数字签名。<br>
+这种方式也有很大的问题，那就是存储nonce参数的“集合”会越来越大。<br>
+nonce的一次性可以解决timestamp参数60s(防止重放攻击)的问题，timestamp可以解决nonce参数“集合”越来越大的问题。</p>
+<pre class="notranslate"><code class="notranslate">public class SignAuthInterceptor implements HandlerInterceptor {
+
+    private RedisTemplate&lt;String, String&gt; redisTemplate;
+
+    private String key;
+
+    public SignAuthInterceptor(RedisTemplate&lt;String, String&gt; redisTemplate, String key) {
+        this.redisTemplate = redisTemplate;
+        this.key = key;
+    }
+
+    @Override
+    public boolean preHandle(HttpServletRequest request,
+                             HttpServletResponse response, Object handler) throws Exception {
+        // 获取时间戳
+        String timestamp = request.getHeader("timestamp");
+        // 获取随机字符串
+        String nonceStr = request.getHeader("nonceStr");
+        // 获取签名
+        String signature = request.getHeader("signature");
+
+        // 判断时间是否大于xx秒(防止重放攻击)
+        long NONCE_STR_TIMEOUT_SECONDS = 60L;
+        if (StrUtil.isEmpty(timestamp) || DateUtil.between(DateUtil.date(Long.parseLong(timestamp) * 1000), DateUtil.date(), DateUnit.SECOND) &gt; NONCE_STR_TIMEOUT_SECONDS) {
+            throw new BusinessException("invalid  timestamp");
+        }
+
+        // 判断该用户的nonceStr参数是否已经在redis中（防止短时间内的重放攻击）
+        Boolean haveNonceStr = redisTemplate.hasKey(nonceStr);
+        if (StrUtil.isEmpty(nonceStr) || Objects.isNull(haveNonceStr) || haveNonceStr) {
+            throw new BusinessException("invalid nonceStr");
+        }
+
+        // 对请求头参数进行签名
+        if (StrUtil.isEmpty(signature) || !Objects.equals(signature, this.signature(timestamp, nonceStr, request))) {
+            throw new BusinessException("invalid signature");
+        }
+
+        // 将本次用户请求的nonceStr参数存到redis中设置xx秒后自动删除
+        redisTemplate.opsForValue().set(nonceStr, nonceStr, NONCE_STR_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+
+        return true;
+    }
+
+    private String signature(String timestamp, String nonceStr, HttpServletRequest request) throws UnsupportedEncodingException {
+        Map&lt;String, Object&gt; params = new HashMap&lt;&gt;(16);
+        Enumeration&lt;String&gt; enumeration = request.getParameterNames();
+        if (enumeration.hasMoreElements()) {
+            String name = enumeration.nextElement();
+            String value = request.getParameter(name);
+            params.put(name, URLEncoder.encode(value, CommonConstants.UTF_8));
+        }
+        String qs = String.format("%s×tamp=%s&amp;nonceStr=%s&amp;key=%s", this.sortQueryParamString(params), timestamp, nonceStr, key);
+        log.info("qs:{}", qs);
+        String sign = SecureUtil.md5(qs).toLowerCase();
+        log.info("sign:{}", sign);
+        return sign;
+    }
+
+    /**
+     * 按照字母顺序进行升序排序
+     *
+     * @param params 请求参数 。注意请求参数中不能包含key
+     * @return 排序后结果
+     */
+    private String sortQueryParamString(Map&lt;String, Object&gt; params) {
+        List&lt;String&gt; listKeys = Lists.newArrayList(params.keySet());
+        Collections.sort(listKeys);
+        StrBuilder content = StrBuilder.create();
+        for (String param : listKeys) {
+            content.append(param).append("=").append(params.get(param).toString()).append("&amp;");
+        }
+        if (content.length() &gt; 0) {
+            return content.subString(0, content.length() - 1);
+        }
+        return content.toString();
+    }
+}
+java
+</code></pre>
+<p>注册拦截器指定拦截接口</p>
+<h3>对敏感数据进行加密传输</h3>
+<p><a href="https://blog.51cto.com/u_16175496/6920098" rel="nofollow">https://blog.51cto.com/u_16175496/6920098</a><br>
+使用TLS（传输层安全）协议可以保证通信过程中的数据加密和完整性。以下是一些基本步骤：</p>
+<ol>
+<li>在服务器上配置TLS证书（包括公钥和私钥）。</li>
+<li>客户端和服务器之间建立TLS连接。客户端向服务器发送HTTPS请求。</li>
+<li>在TLS握手期间，客户端和服务器协商加密算法和密钥交换方法。</li>
+<li>握手成功后，客户端和服务器之间的所有数据传输都会经过加密处理。</li>
+</ol>
+<p>具体的实现取决于所使用的编程语言和框架。以下是使用Java的示例代码，演示如何使用TLS进行加密传输：</p>
+<pre class="notranslate"><code class="notranslate">// 创建SSLContext对象
+SSLContext sslContext = SSLContext.getInstance("TLS");
+
+// 初始化SSLContext，加载证书和私钥
+KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
+keyStore.load(new FileInputStream("keystore.jks"), "password".toCharArray());
+
+KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+kmf.init(keyStore, "password".toCharArray());
+
+TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+tmf.init(keyStore);
+
+sslContext.init(kmf.getKeyManagers(), tmf.getTrustManagers(), new SecureRandom());
+
+// 创建HttpsURLConnection连接
+URL url = new URL("https://api.example.com/endpoint");
+HttpsURLConnection connection = (HttpsURLConnection) url.openConnection();
+connection.setSSLSocketFactory(sslContext.getSocketFactory());
+
+// 设置其他请求参数、发送请求、处理响应等
+java
+</code></pre>
+<p>这段代码中，我们创建了一个<code class="notranslate">SSLContext</code>对象并初始化它，加载了服务器的证书和私钥。然后，通过<code class="notranslate">HttpsURLConnection</code>对象，设置了TLS的安全套接字工厂，并与指定的URL建立了HTTPS连接。<br>
+请注意，你需要将实际的证书和私钥文件（通常是<code class="notranslate">.jks</code>格式）替换为真实的文件路径，并提供正确的密码。<br>
+以上代码只是一个简单的示例，实际部署时可能需要根据具体要求进行更多配置。确保在项目中遵循最佳实践和安全建议，并与相应的开发和运维团队合作，以确保三方接口的安全性。</p>
+<h2>AK和SK生成方案</h2>
+<blockquote>
+<p>参考各大云服务厂商如何获取aksk:<a href="https://blog.csdn.net/weixin_43460193/article/details/130242478" rel="nofollow">https://blog.csdn.net/weixin_43460193/article/details/130242478</a></p>
+</blockquote>
+<p>开发一个三方接口，并提供给客户使用，可以考虑以下方法来生成AK（Access Key）和SK（Secret Key）：</p>
+<ol>
+<li>设计API密钥管理系统：创建一个API密钥管理系统，用于生成和管理AK和SK。这个系统可以是一个独立的服务器应用或与你的主应用集成在一起。</li>
+<li>生成AK和SK：
+<ul>
+<li>在API密钥管理系统中，为每个客户生成唯一的AK和SK。</li>
+<li>AK通常是一个公开的标识符，用于标识客户的身份。可以使用随机字符串、UUID等方式生成。</li>
+<li>SK是一个保密的私钥，用于生成身份验证签名和加密访问令牌。可以使用随机字符串、哈希函数等方式生成，并确保其足够安全。</li>
+</ul>
+</li>
+<li>存储和管理AK和SK：
+<ul>
+<li>将生成的AK和SK存储在数据库或其他持久化存储中，并与客户的其他相关信息关联起来。</li>
+<li>需要实施适当的权限控制和安全措施，以确保只有授权的用户可以访问和管理AK和SK。</li>
+<li>可以考虑对SK进行加密处理，以增加安全性。</li>
+</ul>
+</li>
+<li>提供API密钥分发机制：
+<ul>
+<li>客户可以通过你提供的界面、API或者自助注册流程来获取他们的AK和SK。</li>
+<li>在分发过程中，确保以安全的方式将AK和SK传递给客户。例如，使用加密连接或其他安全通道进行传输。</li>
+</ul>
+</li>
+<li>安全性和最佳实践：
+<ul>
+<li>强烈建议对API密钥管理系统进行安全审计，并根据最佳实践来保护和管理AK和SK。</li>
+<li>定期轮换AK和SK，以增加安全性并降低潜在风险。</li>
+<li>在设计接口时，使用AK和SK进行身份验证和权限控制，以防止未经授权的访问。</li>
+</ul>
+</li>
+</ol>
+<p>请注意，上述步骤提供了一般性的指导，具体实现可能因你的应用程序需求、技术栈和安全策略而有所不同。确保遵循安全最佳实践，并参考相关的安全文档和建议，以确保生成的AK和SK的安全性和可靠性。</p>
+<pre class="notranslate"><code class="notranslate">CREATE TABLE api_credentials (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    app_id VARCHAR(255) NOT NULL,
+    access_key VARCHAR(255) NOT NULL,
+    secret_key VARCHAR(255) NOT NULL,
+    valid_from DATETIME NOT NULL,
+    valid_to DATETIME NOT NULL,
+    enabled TINYINT(1) NOT NULL DEFAULT 1,
+    allowed_endpoints VARCHAR(255),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+SQL
+</code></pre>
+<p>这个表包含以下字段：</p>
+<ul>
+<li><code class="notranslate">id</code>：主键，自增的唯一标识符。</li>
+<li><code class="notranslate">app_id</code>：应用程序ID或标识符，用于关联AKSK与特定应用程序。</li>
+<li><code class="notranslate">access_key</code>：访问密钥（AK），用于标识客户身份。</li>
+<li><code class="notranslate">secret_key</code>：秘密密钥（SK），用于生成签名和进行身份验证。</li>
+<li><code class="notranslate">valid_from</code>：AKSK有效期起始时间。</li>
+<li><code class="notranslate">valid_to</code>：AKSK有效期结束时间。</li>
+<li><code class="notranslate">enabled</code>：是否启用该AKSK，1表示启用，0表示禁用。</li>
+<li><code class="notranslate">allowed_endpoints</code>：逗号分隔的允许访问的接口/端点列表。</li>
+<li><code class="notranslate">created_at</code>：记录创建时间。</li>
+</ul>
+<p>在实际使用中，你可能需要根据具体需求对字段进行调整或添加索引以提高性能。此外，还可以考虑添加其他字段来满足你的应用程序的需求，例如描述、所属用户等。<br>
+请注意，具体的设计可能会因你的应用程序需求和使用场景而有所不同。确保在实施前仔细考虑你的业务要求，并遵循良好的数据库设计原则和最佳实践。</p>
+<h2>API接口设计补充</h2>
+<p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/eb14f4b7491614808b971be228b860740f85dfd35e0834da972eba12ad4be6f7/68747470733a2f2f63646e2e6e6c61726b2e636f6d2f79757175652f302f323032342f706e672f31323439313234392f313731323635303538393334382d38653430663363302d626565332d343966622d613663342d3863666538316266616534312e706e6723636c69656e7449643d7536303330643532612d313032622d342666726f6d3d70617374652669643d753437346661353965266f726967696e4865696768743d343335266f726967696e57696474683d373539266f726967696e616c547970653d75726c26726174696f3d3126726f746174696f6e3d302673686f775469746c653d66616c73652673697a653d313236323032267374617475733d646f6e65267374796c653d6e6f6e65267461736b49643d7562613463343938642d626331622d343533392d616262392d3165376161333465356661267469746c653d"><img src="https://camo.githubusercontent.com/eb14f4b7491614808b971be228b860740f85dfd35e0834da972eba12ad4be6f7/68747470733a2f2f63646e2e6e6c61726b2e636f6d2f79757175652f302f323032342f706e672f31323439313234392f313731323635303538393334382d38653430663363302d626565332d343966622d613663342d3863666538316266616534312e706e6723636c69656e7449643d7536303330643532612d313032622d342666726f6d3d70617374652669643d753437346661353965266f726967696e4865696768743d343335266f726967696e57696474683d373539266f726967696e616c547970653d75726c26726174696f3d3126726f746174696f6e3d302673686f775469746c653d66616c73652673697a653d313236323032267374617475733d646f6e65267374796c653d6e6f6e65267461736b49643d7562613463343938642d626331622d343533392d616262392d3165376161333465356661267469746c653d" alt="image.jpg" data-canonical-src="https://cdn.nlark.com/yuque/0/2024/png/12491249/1712650589348-8e40f3c0-bee3-49fb-a6c4-8cfe81bfae41.png#clientId=u6030d52a-102b-4&amp;from=paste&amp;id=u474fa59e&amp;originHeight=435&amp;originWidth=759&amp;originalType=url&amp;ratio=1&amp;rotation=0&amp;showTitle=false&amp;size=126202&amp;status=done&amp;style=none&amp;taskId=uba4c498d-bc1b-4539-abb9-1e7aa34e5fa&amp;title=" style="max-width: 100%;"></a></p>
+<h3>1.使用POST作为接口请求方式</h3>
+<p>一般调用接口最常用的两种方式就是GET和POST。两者的区别也很明显，GET请求会将参数暴露在浏览器URL中，而且对长度也有限制。<strong>为了更高的安全性，所有接口都采用POST方式请求。</strong></p>
+<h3>2.客户端IP白名单</h3>
+<p><strong>ip白名单是指</strong><code class="notranslate">**将接口的访问权限对部分ip进行开放**</code><strong>来避免其他ip进行访问攻击</strong>。</p>
+<ul>
+<li>设置ip白名单缺点就是当你的客户端进行迁移后，就需要重新联系服务提供者添加新的ip白名单。</li>
+<li>设置ip白名单的方式很多，除了传统的防火墙之外，spring cloud alibaba提供的组件sentinel也支持白名单设置。</li>
+<li>为了降低api的复杂度，推荐使用防火墙规则进行白名单设置。</li>
+</ul>
+<h3>3. 单个接口针对ip限流</h3>
+<p><strong>限流是为了更好的维护系统稳定性。</strong></p>
+<ul>
+<li>使用<code class="notranslate">redis</code>进行<code class="notranslate">接口调用次数统计</code>，<code class="notranslate">ip+接口地址作为key，访问次数作为value</code>，<code class="notranslate">每次请求value+1</code>，<code class="notranslate">设置过期时长来限制接口的调用频率。</code></li>
+</ul>
+<h3>4. 记录接口请求日志</h3>
+<p>记录请求日志，快速定位异常请求位置，排查问题原因。(如：用aop来全局处理接口请求)</p>
+<h3>5. 敏感数据脱敏</h3>
+<p>在接口调用过程中，可能会涉及到<code class="notranslate">订单号</code>等敏感数据，这类数据通常需要<code class="notranslate">脱敏处理</code></p>
+<ul>
+<li>最常用的方式就是加密。加密方式使用安全性比较高的<code class="notranslate">RSA非对称加密。</code> 非对称加密算法有<code class="notranslate">两个密钥</code>，这两个密钥<code class="notranslate">完全不同但又完全匹配</code>。<strong>只有使用匹配的一对公钥和私钥，才能完成对明文的加密和解密过程。</strong></li>
+</ul>
+<h3>6.幂等性问题</h3>
+<p>幂等性是指: <code class="notranslate">任意多次请求的执行结果和一次请求的执行结果所产生的影响相同</code>。</p>
+<ul>
+<li>说的直白一点就是查询操作无论查询多少次都不会影响数据本身，因此查询操作本身就是幂等的。</li>
+<li>但是新增操作，每执行一次数据库就会发生变化，所以它是非幂等的。</li>
+</ul>
+<p>幂等问题的解决有很多思路，这里讲一种比较严谨的。</p>
+<ul>
+<li><code class="notranslate">提供一个生成随机数的接口</code>，随机数全局唯一。调用接口的时候带入随机数。</li>
+<li>第一次调用，业务处理成功后，将随机数作为key，操作结果作为value，存入redis，同时设置过期时长。</li>
+<li>第二次调用，查询redis，如果key存在，则证明是重复提交，直接返回错误。</li>
+</ul>
+<h3>7.版本控制</h3>
+<p>一套成熟的API文档，一旦发布是不允许随意修改接口的。这时候如果想新增或者修改接口，就需要加入<code class="notranslate">版本控制</code>，版本号可以是整数类型，也可以是浮点数类型。</p>
+<ul>
+<li><strong>一般接口地址都会带上版本号，</strong><code class="notranslate">**http://ip:port//v1/list**</code>** , **<code class="notranslate">**http://ip:port//v2/list**</code></li>
+</ul>
+<h3>8.响应状态码规范</h3>
+<p>一个牛逼的API，还需要提供简单明了的响应值，根据状态码就可以大概知道问题所在。我们采用http的状态码进行数据封装，例如200表示请求成功，4xx表示客户端错误，5xx表示服务器内部发生错误。<br>
+状态码设计参考如下：</p>
+<pre class="notranslate"><code class="notranslate">1.  `public enum CodeEnum {`
+1.  `// 根据业务需求进行添加`
+1.  `SUCCESS(200,"处理成功"),`
+1.  `ERROR_PATH(404,"请求地址错误"),`
+1.  `ERROR_SERVER(505,"服务器内部发生错误");`
+1.  ``
+1.  `private int code;`
+1.  `private String message;`
+1.  ``
+1.  `CodeEnum(int code, String message) {`
+1.  `this.code = code;`
+1.  `this.message = message;`
+1.  `}`
+1.  ``
+1.  `public int getCode() { return code; }`
+1.  `public void setCode(int code) { this.code = code; }`
+1.  ``
+1.  `public String getMessage() { return message; }`
+1.  `public void setMessage(String message) { this.message = message; }`
+1.  `}`
+java
+</code></pre>
+<h3>9.统一响应数据格式</h3>
+<p>为了方便给客户端响应，响应数据会包含三个属性，<code class="notranslate">状态码（code）,信息描述（message）,响应数据（data）</code>。客户端根据状态码及信息描述可快速知道接口，如果状态码返回成功，再开始处理数据。</p>
+<pre class="notranslate"><code class="notranslate">1.  `public class Result implements Serializable {`
+1.  `private static final long serialVersionUID = 793034041048451317L;`
+1.  ``
+1.  `private int code;`
+1.  `private String message;`
+1.  `private Object data = null;`
+1.  ``
+1.  `public int getCode() {`
+1.  `return code;`
+1.  `}`
+1.  `public void setCode(int code) {`
+1.  `this.code = code;`
+1.  `}`
+1.  ``
+1.  `public String getMessage() {`
+1.  `return message;`
+1.  `}`
+1.  `public void setMessage(String message) {`
+1.  `this.message = message;`
+1.  `}`
+1.  ``
+1.  `public Object getData() {`
+1.  `return data;`
+1.  `}`
+1.  ``
+1.  `/** * 放入响应枚举 */`
+1.  `public Result fillCode(CodeEnum codeEnum){`
+1.  `this.setCode(codeEnum.getCode());`
+1.  `this.setMessage(codeEnum.getMessage());`
+1.  `return this;`
+1.  `}`
+1.  ``
+1.  `/** * 放入响应码及信息 */`
+1.  `public Result fillCode(int code, String message){`
+1.  `this.setCode(code);`
+1.  `this.setMessage(message);`
+1.  `return this;`
+1.  `}`
+1.  ``
+1.  `/** * 处理成功，放入自定义业务数据集合 */`
+1.  `public Result fillData(Object data) {`
+1.  `this.setCode(CodeEnum.SUCCESS.getCode());`
+1.  `this.setMessage(CodeEnum.SUCCESS.getMessage());`
+1.  `this.data = data;`
+1.  `return this;`
+1.  `}`
+1.  `}`
+java
+</code></pre>
+<h3>10.接口文档</h3>
+<p>一个好的API还少不了一个优秀的接口文档。接口文档的可读性非常重要，虽然很多程序员都不喜欢写文档，而且不喜欢别人不写文档。为了不增加程序员的压力，<strong>推荐使用swagger2或其他接口管理工具</strong>，通过简单配置，就可以在开发中测试接口的连通性，上线后也可以生成离线文档用于管理API</p>
+<h3>11.生成签名sign的详细步骤</h3>
+<p>结合案例详细说明怎么生成签名signature（<code class="notranslate">写完上面的博客后，得出的感悟</code>）</p>
+<ul>
+<li><code class="notranslate">第1步</code>: 将所有参数（注意是所有参数，包括appId,timeStamp,nonce），<code class="notranslate">除去sign本身</code>，以及值是空的参数，按<code class="notranslate">key名升序排序存储</code>。</li>
+<li><code class="notranslate">第2步</code>: 然后把排序后的参数按 <code class="notranslate">key1value1key2value2…keyXvalueX</code>的方式拼接成一个字符串。</li>
+</ul>
+<blockquote>
+<p>（这里的参数和值必须是传输参数的原始值，不能是经过处理的，如不能将<code class="notranslate">"</code>转成<code class="notranslate">”</code>后再拼接）</p>
+</blockquote>
+<ul>
+<li><code class="notranslate">第3步</code>: 把分配给调用方的<code class="notranslate">密钥secret</code>拼接在第2步得到的字符串<code class="notranslate">最后面</code>。</li>
+</ul>
+<blockquote>
+<p>即: key1value1key2value2…keyXvalueX + secret</p>
+</blockquote>
+<ul>
+<li><code class="notranslate">第4步</code>: 计算第3步字符串的<code class="notranslate">md5值(32位)</code>，然后转成<code class="notranslate">大写</code>,最终得到的字符串作为<code class="notranslate">签名sign</code>。</li>
+</ul>
+<blockquote>
+<p>即: Md5(key1value1key2value2…keyXvalueX + secret) 转大写</p>
+</blockquote>
+<p><strong>举例：</strong><br>
+假设传输的数据是</p>
+<pre class="notranslate"><code class="notranslate">http://www.xxx.com/openApi?sign=sign_value&amp;k1=v1&amp;k2=v2&amp;method=cancel&amp;k3=&amp;kX=vX
+</code></pre>
+<p>请求头是</p>
+<pre class="notranslate"><code class="notranslate">appId:zs001timeStamp:1612691221000sign:2B42AAED20E4B2D5BA389F7C344FE91Bnonce:1234567890
+</code></pre>
+<p><strong>（实际情况最好是通过post方式发送）其中sign参数对应的sign_value就是签名的值。</strong></p>
+<ul>
+<li>第一步：拼接字符串。</li>
+</ul>
+<blockquote>
+<p>首先<code class="notranslate">去除sign参数本身，然后去除值是空的参数k3</code>，剩下<strong>appId=zs001&amp;timeStamp=1612691221000&amp;nonce=1234567890&amp;k1=v1&amp;k2=v2&amp;&amp;method=cancel&amp;kX=vX</strong>，然后按<code class="notranslate">参数名字符升序排序</code>，<strong>appId=zs001&amp;k1=v1&amp;k2=v2&amp;kX=vX&amp;method=cancel&amp;nonce=1234567890&amp;timeStamp=1612691221000</strong></p>
+</blockquote>
+<ul>
+<li>第二步：将参数名和值的拼接</li>
+</ul>
+<blockquote>
+<p>appIdzs001k1v1k2v2kXvXmethodcancelnonce1234567890timeStamp1612691221000</p>
+</blockquote>
+<ul>
+<li>第三步：在上面拼接得到的字符串前加上<code class="notranslate">密钥secret</code></li>
+</ul>
+<blockquote>
+<p>假设是miyao，得到新的字符串appIdzs001k1v1k2v2kXvXmethodcancelnonce1234567890timeStamp1612691221000miyao</p>
+</blockquote>
+<ul>
+<li>第四步：然后将这个字符串进行<code class="notranslate">md5计算</code></li>
+</ul>
+<blockquote>
+<p>假设得到的是abcdef，然后转为大写，得到ABCDEF这个值作为<code class="notranslate">签名sign</code></p>
+</blockquote>
+<p><strong>注意，计算md5之前调用方需确保签名加密字符串编码与提供方一致，如统一使用utf-8编码或者GBK编码，如果编码方式不一致则计算出来的签名会校验失败。</strong></p>
+<blockquote>
+<p>上面说的请求录音可拼可不拼接，主要还是为了增强签名的复杂性</p>
+</blockquote>
+<h3>12.1.什么是token?</h3>
+<p><strong>Token是什么？</strong><br>
+token即 <strong>访问令牌access token</strong>，<em>用于接口中标识接口调用者的身份、凭证，减少用户名和密码的传输次数。</em>  一般情况下客户端(接口调用方)需要先向服务器端申请一个接口调用的账号，服务器会给出一个<code class="notranslate">appId</code>和一个<code class="notranslate">appSecret(appSecret用于参数签名使用)</code>,</p>
+<blockquote>
+<p><code class="notranslate">注意appSecret保存到客户端，需要做一些安全处理，防止泄露。</code></p>
+</blockquote>
+<ul>
+<li>Token的值一般是<code class="notranslate">UUID</code>，服务端生成Token后需要将<code class="notranslate">token做为key</code>，将一些和token关联的信息作为value保存到缓存服务器中(redis)，当一个请求过来后，服务器就去缓存服务器中查询这个Token是否存在，存在则调用接口，不存在返回接口错误，一般通过<code class="notranslate">拦截器</code>或者<code class="notranslate">过滤器</code>来实现。</li>
+</ul>
+<p><strong>Token分为两种</strong></p>
+<ol>
+<li><code class="notranslate">API Token(接口令牌)</code>: <strong>用于访问不需要用户登录的接口</strong>，如登录、注册、一些基本数据的获取等。获取接口令牌需要拿appId、timestamp和sign来换，sign=加密(参数1+…+参数n+timestamp+key)</li>
+<li><code class="notranslate">USER Token(用户令牌)</code>: <strong>用于访问需要用户登录之后的接口</strong>，如：获取我的基本信息、保存、修改、删除等操作。<code class="notranslate">获取用户令牌需要拿用户名和密码来换</code></li>
+</ol>
+<blockquote>
+<p>挺好的一篇文章 Java 生鲜电商平台 - API 接口设计之 token、timestamp、sign 具体架构与实现</p>
+</blockquote>
+<h3>12.2.Token+签名(有用户状态的接口签名)</h3>
+<p><code class="notranslate">**上面讲的接口签名方式都是无状态的**</code>，在APP开放API接口的设计中，由于<code class="notranslate">大多数接口涉及到用户的个人信息以及产品的敏感数据，所以要对这些接口进行身份验证</code>，为了安全起见<code class="notranslate">让用户暴露的明文密码次数越少越好</code>，然而客户端与服务器的交互在请求之间是<code class="notranslate">无状态的</code>，也就是说，<code class="notranslate">**当涉及到用户状态时**</code>，每次请求都要带上身份验证信息(<code class="notranslate">令牌token</code>)。<br>
+<strong>1.Token身份验证</strong></p>
+<ol>
+<li>用户登录向服务器提供认证信息（如账号和密码），服务器验证成功后<code class="notranslate">返回Token</code>给客户端；</li>
+<li>客户端将<code class="notranslate">Token缓存在本地</code>，后续<code class="notranslate">每次</code>发起请求时，都要<code class="notranslate">携带此Token</code>；</li>
+<li>服务端检查Token的<code class="notranslate">有效性</code>，有效则放行，无效（Token错误或过期）则拒绝。</li>
+</ol>
+<p><code class="notranslate">弊端</code>：<strong>Token被劫持，伪造请求和篡改参数。</strong><br>
+<strong>2.Token+签名验证</strong></p>
+<ul>
+<li>与上面接口签名规则一样，为<code class="notranslate">客户端分配appSecret（密钥，用于接口加密，不参与传输）</code>，<code class="notranslate">将appSecret和所有请求参数组合成一个字符串</code>，根据签名算法生成签名值，发送请求时将签名值一起发送给服务器验证。这样，<em>即使Token被劫持，对方不知道appSecret和签名算法，就无法伪造请求和篡改参数</em>，<code class="notranslate">并且有了token后也能正确的获取到用户的状态</code></li>
+</ul>
+<p>登陆和退出请求<br>
+<a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/92e3dd6d6707e00de392d84e09defa7aec3f3f9b6f77614d114023af1d6a153e/68747470733a2f2f63646e2e6e6c61726b2e636f6d2f79757175652f302f323032342f706e672f31323439313234392f313731323635303538393234302d37366138363361622d333863332d343765382d616463352d6133303231366633666165352e706e6723617665726167654875653d25323366366636663626636c69656e7449643d7536303330643532612d313032622d342666726f6d3d70617374652669643d753032616663376562266f726967696e4865696768743d323834266f726967696e57696474683d343732266f726967696e616c547970653d75726c26726174696f3d3126726f746174696f6e3d302673686f775469746c653d66616c73652673697a653d3331393836267374617475733d646f6e65267374796c653d6e6f6e65267461736b49643d7566356164663665302d333134642d343462632d626663622d3365333739363036393432267469746c653d"><img src="https://camo.githubusercontent.com/92e3dd6d6707e00de392d84e09defa7aec3f3f9b6f77614d114023af1d6a153e/68747470733a2f2f63646e2e6e6c61726b2e636f6d2f79757175652f302f323032342f706e672f31323439313234392f313731323635303538393234302d37366138363361622d333863332d343765382d616463352d6133303231366633666165352e706e6723617665726167654875653d25323366366636663626636c69656e7449643d7536303330643532612d313032622d342666726f6d3d70617374652669643d753032616663376562266f726967696e4865696768743d323834266f726967696e57696474683d343732266f726967696e616c547970653d75726c26726174696f3d3126726f746174696f6e3d302673686f775469746c653d66616c73652673697a653d3331393836267374617475733d646f6e65267374796c653d6e6f6e65267461736b49643d7566356164663665302d333134642d343462632d626663622d3365333739363036393432267469746c653d" alt="image.jpg" data-canonical-src="https://cdn.nlark.com/yuque/0/2024/png/12491249/1712650589240-76a863ab-38c3-47e8-adc5-a30216f3fae5.png#averageHue=%23f6f6f6&amp;clientId=u6030d52a-102b-4&amp;from=paste&amp;id=u02afc7eb&amp;originHeight=284&amp;originWidth=472&amp;originalType=url&amp;ratio=1&amp;rotation=0&amp;showTitle=false&amp;size=31986&amp;status=done&amp;style=none&amp;taskId=uf5adf6e0-314d-44bc-bfcb-3e379606942&amp;title=" style="max-width: 100%;"></a><br>
+后续请求<br>
+客户端: 与上面接口签名规则一样类似，把appId改为token即可。<br>
+<a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/e27ca71aac45596494091f5152d0947af0f31a0f74a3e87ea537a488d3c6676b/68747470733a2f2f63646e2e6e6c61726b2e636f6d2f79757175652f302f323032342f706e672f31323439313234392f313731323635303538393334322d32386435363032662d616438352d346561362d396437352d6635383331363834366263342e706e6723617665726167654875653d25323366306630663026636c69656e7449643d7536303330643532612d313032622d342666726f6d3d70617374652669643d753335623563353634266f726967696e4865696768743d353038266f726967696e57696474683d333539266f726967696e616c547970653d75726c26726174696f3d3126726f746174696f6e3d302673686f775469746c653d66616c73652673697a653d3731333935267374617475733d646f6e65267374796c653d6e6f6e65267461736b49643d7537636432363561362d613230612d343439332d386134342d3532353266623662316434267469746c653d"><img src="https://camo.githubusercontent.com/e27ca71aac45596494091f5152d0947af0f31a0f74a3e87ea537a488d3c6676b/68747470733a2f2f63646e2e6e6c61726b2e636f6d2f79757175652f302f323032342f706e672f31323439313234392f313731323635303538393334322d32386435363032662d616438352d346561362d396437352d6635383331363834366263342e706e6723617665726167654875653d25323366306630663026636c69656e7449643d7536303330643532612d313032622d342666726f6d3d70617374652669643d753335623563353634266f726967696e4865696768743d353038266f726967696e57696474683d333539266f726967696e616c547970653d75726c26726174696f3d3126726f746174696f6e3d302673686f775469746c653d66616c73652673697a653d3731333935267374617475733d646f6e65267374796c653d6e6f6e65267461736b49643d7537636432363561362d613230612d343439332d386134342d3532353266623662316434267469746c653d" alt="image.jpg" data-canonical-src="https://cdn.nlark.com/yuque/0/2024/png/12491249/1712650589342-28d5602f-ad85-4ea6-9d75-f58316846bc4.png#averageHue=%23f0f0f0&amp;clientId=u6030d52a-102b-4&amp;from=paste&amp;id=u35b5c564&amp;originHeight=508&amp;originWidth=359&amp;originalType=url&amp;ratio=1&amp;rotation=0&amp;showTitle=false&amp;size=71395&amp;status=done&amp;style=none&amp;taskId=u7cd265a6-a20a-4493-8a44-5252fb6b1d4&amp;title=" style="max-width: 100%;"></a></p>
+<h2>参考：</h2>
+<p><a href="https://www.dandelioncloud.cn/article/details/1585274840783507457" rel="nofollow">https://www.dandelioncloud.cn/article/details/1585274840783507457</a><br>
+<a href="https://www.cnblogs.com/shamo89/p/17497921.html" rel="nofollow">https://www.cnblogs.com/shamo89/p/17497921.html</a><br>
+<a href="https://www.cnblogs.com/cgy1995/p/17473791.html" rel="nofollow">https://www.cnblogs.com/cgy1995/p/17473791.html</a></p>
+<blockquote>
+<p>来自: <a href="https://rapidsu.cn/articles/3883" rel="nofollow">三方接口调用设计方案</a></p>
+</blockquote></div>
+<div style="font-size:small;margin-top:8px;float:right;"></div>
+<button class="btn btn-block" type="button" onclick="openComments()" id="cmButton">评论</button>
+<div class="comments" id="comments"></div>
+</div>
+    <div id="footer">Copyright © <span id="year"></span><a href="https://ileyfung.github.io"> leyfung </a>
+<p>
+<span id="runday"></span>Powered by <a href="https://meekdai.com/Gmeek.html" target="_blank">Gmeek</a>
+</p>
+
+<script>
+if(""!=""){
+    var now=new Date();
+    var startSite=new Date("");
+    var diff=now.getTime()-startSite.getTime();
+    var diffDay=Math.floor(diff/(1000*60*60*24));
+    document.getElementById("year").innerHTML=now.getFullYear();
+    if(""!=""){document.getElementById("runday").innerHTML=" • "+"网站运行"+diffDay+"天"+" • ";}
+    else{document.getElementById("runday").innerHTML="网站运行"+diffDay+"天"+" • ";}
+}
+</script>
+</div>
+</body>
+<script>
+var IconList={'sun': 'M8 10.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM8 12a4 4 0 100-8 4 4 0 000 8zM8 0a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0V.75A.75.75 0 018 0zm0 13a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 018 13zM2.343 2.343a.75.75 0 011.061 0l1.06 1.061a.75.75 0 01-1.06 1.06l-1.06-1.06a.75.75 0 010-1.06zm9.193 9.193a.75.75 0 011.06 0l1.061 1.06a.75.75 0 01-1.06 1.061l-1.061-1.06a.75.75 0 010-1.061zM16 8a.75.75 0 01-.75.75h-1.5a.75.75 0 010-1.5h1.5A.75.75 0 0116 8zM3 8a.75.75 0 01-.75.75H.75a.75.75 0 010-1.5h1.5A.75.75 0 013 8zm10.657-5.657a.75.75 0 010 1.061l-1.061 1.06a.75.75 0 11-1.06-1.06l1.06-1.06a.75.75 0 011.06 0zm-9.193 9.193a.75.75 0 010 1.06l-1.06 1.061a.75.75 0 11-1.061-1.06l1.06-1.061a.75.75 0 011.061 0z', 'moon': 'M9.598 1.591a.75.75 0 01.785-.175 7 7 0 11-8.967 8.967.75.75 0 01.961-.96 5.5 5.5 0 007.046-7.046.75.75 0 01.175-.786zm1.616 1.945a7 7 0 01-7.678 7.678 5.5 5.5 0 107.678-7.678z', 'sync': 'M1.705 8.005a.75.75 0 0 1 .834.656 5.5 5.5 0 0 0 9.592 2.97l-1.204-1.204a.25.25 0 0 1 .177-.427h3.646a.25.25 0 0 1 .25.25v3.646a.25.25 0 0 1-.427.177l-1.38-1.38A7.002 7.002 0 0 1 1.05 8.84a.75.75 0 0 1 .656-.834ZM8 2.5a5.487 5.487 0 0 0-4.131 1.869l1.204 1.204A.25.25 0 0 1 4.896 6H1.25A.25.25 0 0 1 1 5.75V2.104a.25.25 0 0 1 .427-.177l1.38 1.38A7.002 7.002 0 0 1 14.95 7.16a.75.75 0 0 1-1.49.178A5.5 5.5 0 0 0 8 2.5Z', 'home': 'M6.906.664a1.749 1.749 0 0 1 2.187 0l5.25 4.2c.415.332.657.835.657 1.367v7.019A1.75 1.75 0 0 1 13.25 15h-3.5a.75.75 0 0 1-.75-.75V9H7v5.25a.75.75 0 0 1-.75.75h-3.5A1.75 1.75 0 0 1 1 13.25V6.23c0-.531.242-1.034.657-1.366l5.25-4.2Zm1.25 1.171a.25.25 0 0 0-.312 0l-5.25 4.2a.25.25 0 0 0-.094.196v7.019c0 .138.112.25.25.25H5.5V8.25a.75.75 0 0 1 .75-.75h3.5a.75.75 0 0 1 .75.75v5.25h2.75a.25.25 0 0 0 .25-.25V6.23a.25.25 0 0 0-.094-.195Z', 'github': 'M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z'};
+var utterancesLoad=0;
+
+let themeSettings={
+    "dark": ["dark","moon","#00f0ff","dark-blue"],
+    "light": ["light","sun","#ff5000","github-light"],
+    "auto": ["auto","sync","","preferred-color-scheme"]
+};
+function changeTheme(mode, icon, color, utheme){
+    document.documentElement.setAttribute("data-color-mode",mode);
+    document.getElementById("themeSwitch").setAttribute("d",value=IconList[icon]);
+    document.getElementById("themeSwitch").parentNode.style.color=color;
+    if(utterancesLoad==1){utterancesTheme(utheme);}
+}
+function modeSwitch(){
+    let currentMode=document.documentElement.getAttribute('data-color-mode');
+    let newMode = currentMode === "light" ? "dark" : currentMode === "dark" ? "auto" : "light";
+    localStorage.setItem("meek_theme", newMode);
+    if(themeSettings[newMode]){
+        changeTheme(...themeSettings[newMode]);
+    }
+}
+function utterancesTheme(theme){
+    const message={type:'set-theme',theme: theme};
+    const iframe=document.getElementsByClassName('utterances-frame')[0];
+    iframe.contentWindow.postMessage(message,'https://utteranc.es');
+}
+if(themeSettings[theme]){changeTheme(...themeSettings[theme]);}
+console.log("\n %c Gmeek last https://github.com/Meekdai/Gmeek \n\n","padding:5px 0;background:#02d81d;color:#fff");
+</script>
+
+<script>
+document.getElementById("pathHome").setAttribute("d",IconList["home"]);
+document.getElementById("pathIssue").setAttribute("d",IconList["github"]);
+
+function openComments(){
+    cm=document.getElementById("comments");
+    cmButton=document.getElementById("cmButton");
+    cmButton.innerHTML="loading";
+    span=document.createElement("span");
+    span.setAttribute("class","AnimatedEllipsis");
+    cmButton.appendChild(span);
+
+    script=document.createElement("script");
+    script.setAttribute("src","https://utteranc.es/client.js");
+    script.setAttribute("repo","ileyfung/ileyfung.github.io");
+    script.setAttribute("issue-term","title");
+    
+    if(localStorage.getItem("meek_theme")=="dark"){script.setAttribute("theme","dark-blue");}
+    else if(localStorage.getItem("meek_theme")=="light") {script.setAttribute("theme","github-light");}
+    else{script.setAttribute("theme","preferred-color-scheme");}
+    
+    script.setAttribute("crossorigin","anonymous");
+    script.setAttribute("async","");
+    cm.appendChild(script);
+
+    int=self.setInterval("iFrameLoading()",200);
+}
+
+function iFrameLoading(){
+    var utterances=document.getElementsByClassName('utterances');
+    if(utterances.length==1){
+        if(utterances[0].style.height!=""){
+            utterancesLoad=1;
+            int=window.clearInterval(int);
+            document.getElementById("cmButton").style.display="none";
+            console.log("utterances Load OK");
+        }
+    }
+}
+</script>
+
+
+
+</html>
