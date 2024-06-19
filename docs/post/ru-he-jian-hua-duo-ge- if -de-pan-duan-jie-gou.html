@@ -13,10 +13,10 @@
 <meta property="og:title" content="如何简化多个 if 的判断结构">
 <meta property="og:description" content="> 编程实践中，往往连续使用多个 if 进行判断，这种代码非常冗余，也不易读，本文讨论怎么简化它。">
 <meta property="og:type" content="article">
-<meta property="og:url" content="https://ileyfung.github.io/post/ru-he-jian-hua-duo-ge-%20if%20-de-pan-duan-jie-gou.html">
+<meta property="og:url" content="https://jlifeng.github.io/ileyfung.github.io/post/ru-he-jian-hua-duo-ge-%20if%20-de-pan-duan-jie-gou.html">
 <meta property="og:image" content="https://github.githubassets.com/favicons/favicon.svg">
 <title>如何简化多个 if 的判断结构</title>
-
+<link href="//unpkg.com/@wooorm/starry-night@2.1.1/style/both.css" rel="stylesheet" />
 
 </head>
 <style>
@@ -48,13 +48,13 @@ body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;
     <div id="header">
 <h1 class="postTitle">如何简化多个 if 的判断结构</h1>
 <div class="title-right">
-    <a href="https://ileyfung.github.io" id="buttonHome" class="btn btn-invisible circle" title="首页">
+    <a href="https://jlifeng.github.io/ileyfung.github.io" id="buttonHome" class="btn btn-invisible circle" title="首页">
         <svg class="octicon" width="16" height="16">
             <path id="pathHome" fill-rule="evenodd"></path>
         </svg>
     </a>
     
-    <a href="https://github.com/ileyfung/ileyfung.github.io/issues/1" target="_blank" class="btn btn-invisible circle" title="Issue">
+    <a href="https://github.com/jlifeng/ileyfung.github.io/issues/1" target="_blank" class="btn btn-invisible circle" title="Issue">
         <svg class="octicon" width="16" height="16">
             <path id="pathIssue" fill-rule="evenodd"></path>
         </svg>
@@ -81,74 +81,69 @@ body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;
 <h2>等等，什么是三元？</h2>
 <p>我已经知道了，我们跳过这个吧。<br>
 三元数与 if/else 并不是革命性的区别，因为它们都是条件运算，但三元数确实返回一个值，因此可以直接在赋值中使用它。</p>
-<pre lang="cpp" class="notranslate"><code class="notranslate">const greaterThanFive = (8 &gt; 5) ? 'yep' : 'nope';
+<div class="highlight highlight-source-c++"><pre class="notranslate"><span class="pl-k">const</span> greaterThanFive = (<span class="pl-c1">8</span> &gt; <span class="pl-c1">5</span>) ? <span class="pl-s"><span class="pl-pds">'</span>yep<span class="pl-pds">'</span></span> : <span class="pl-s"><span class="pl-pds">'</span>nope<span class="pl-pds">'</span></span>;
 
-console.log(greaterThanFive); // 'yep'
-</code></pre>
+console.log(greaterThanFive); <span class="pl-c"><span class="pl-c">//</span> 'yep'</span></pre></div>
 <p>基本模式只是一个条件，如果为真则返回一个值，如果为假则返回一个值。</p>
-<pre lang="cpp" class="notranslate"><code class="notranslate">(condition) ? isTruthy : isFalsy
-</code></pre>
+<div class="highlight highlight-source-c++"><pre class="notranslate">(condition) ? isTruthy : isFalsy</pre></div>
 <h2>If/Else 的替代方案</h2>
 <p>让我们从一个场景开始，逐步了解不同解决方案的示例。</p>
 <p>我们将从用户输入中获取颜色，并需要将它们转换为一些预设的颜色代码来匹配，以便我们可以更改背景颜色。因此，我们将检查颜色名称字符串，并在匹配时设置颜色代码。</p>
-<pre lang="cpp" class="notranslate"><code class="notranslate">const setBackgroundColor = (colorName) =&gt; {
-	let colorCode = '';
-	if(colorName === 'blue') {
-		colorCode = '#2196F3';
-	} else if(colorName === 'green') {
-		colorCode = '#4CAF50';
-	} else if(colorName === 'orange') {
-		colorCode = '#FF9800';
-	} else if(colorName === 'pink') {
-		colorCode = '#E91E63';
-	} else {
-		colorCode = '#F44336';
+<div class="highlight highlight-source-c++"><pre class="notranslate"><span class="pl-k">const</span> setBackgroundColor = (colorName) =&gt; {
+	let colorCode = <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span>;
+	<span class="pl-k">if</span>(colorName === <span class="pl-s"><span class="pl-pds">'</span>blue<span class="pl-pds">'</span></span>) {
+		colorCode = <span class="pl-s"><span class="pl-pds">'</span>#2196F3<span class="pl-pds">'</span></span>;
+	} <span class="pl-k">else</span> <span class="pl-k">if</span>(colorName === <span class="pl-s"><span class="pl-pds">'</span>green<span class="pl-pds">'</span></span>) {
+		colorCode = <span class="pl-s"><span class="pl-pds">'</span>#4CAF50<span class="pl-pds">'</span></span>;
+	} <span class="pl-k">else</span> <span class="pl-k">if</span>(colorName === <span class="pl-s"><span class="pl-pds">'</span>orange<span class="pl-pds">'</span></span>) {
+		colorCode = <span class="pl-s"><span class="pl-pds">'</span>#FF9800<span class="pl-pds">'</span></span>;
+	} <span class="pl-k">else</span> <span class="pl-k">if</span>(colorName === <span class="pl-s"><span class="pl-pds">'</span>pink<span class="pl-pds">'</span></span>) {
+		colorCode = <span class="pl-s"><span class="pl-pds">'</span>#E91E63<span class="pl-pds">'</span></span>;
+	} <span class="pl-k">else</span> {
+		colorCode = <span class="pl-s"><span class="pl-pds">'</span>#F44336<span class="pl-pds">'</span></span>;
 	};
-	document.body.style.backgroundColor = colorCode;
-};
-</code></pre>
+	document.<span class="pl-smi">body</span>.<span class="pl-smi">style</span>.<span class="pl-smi">backgroundColor</span> = colorCode;
+};</pre></div>
 <p>这个 if/else 就完成了工作。但是我们背负着大量重复逻辑比较 colorName 和重复赋值 colorCode 。</p>
 <h2>Switch</h2>
 <p>现在我们可以更恰当地将其更改为 switch 语句。它更符合我们正在尝试做的事情的概念；我们有几种想要匹配的字符串情况，如果没有一种情况匹配，则有一个默认值。</p>
-<pre lang="cpp" class="notranslate"><code class="notranslate">const setBackgroundColor = (colorName) =&gt; {
-	let colorCode = '';
-	switch(colorName) {
-		case 'blue':
-			colorCode = '#2196F3';
-			break;
-		case 'green':
-			colorCode = '#4CAF50';
-			break;
-		case 'orange':
-			colorCode = '#FF9800';
-			break;
-		case 'pink':
-			colorCode = '#E91E63';
-			break;
-		default:
-			colorCode = '#f44336';
+<div class="highlight highlight-source-c++"><pre class="notranslate"><span class="pl-k">const</span> setBackgroundColor = (colorName) =&gt; {
+	let colorCode = <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span>;
+	<span class="pl-k">switch</span>(colorName) {
+		<span class="pl-k">case</span> <span class="pl-s"><span class="pl-pds">'</span>blue<span class="pl-pds">'</span></span>:
+			colorCode = <span class="pl-s"><span class="pl-pds">'</span>#2196F3<span class="pl-pds">'</span></span>;
+			<span class="pl-k">break</span>;
+		<span class="pl-k">case</span> <span class="pl-s"><span class="pl-pds">'</span>green<span class="pl-pds">'</span></span>:
+			colorCode = <span class="pl-s"><span class="pl-pds">'</span>#4CAF50<span class="pl-pds">'</span></span>;
+			<span class="pl-k">break</span>;
+		<span class="pl-k">case</span> <span class="pl-s"><span class="pl-pds">'</span>orange<span class="pl-pds">'</span></span>:
+			colorCode = <span class="pl-s"><span class="pl-pds">'</span>#FF9800<span class="pl-pds">'</span></span>;
+			<span class="pl-k">break</span>;
+		<span class="pl-k">case</span> <span class="pl-s"><span class="pl-pds">'</span>pink<span class="pl-pds">'</span></span>:
+			colorCode = <span class="pl-s"><span class="pl-pds">'</span>#E91E63<span class="pl-pds">'</span></span>;
+			<span class="pl-k">break</span>;
+		<span class="pl-k">default</span>:
+			colorCode = <span class="pl-s"><span class="pl-pds">'</span>#f44336<span class="pl-pds">'</span></span>;
 	};
-	document.body.style.backgroundColor = colorCode;
-};
-</code></pre>
+	document.<span class="pl-smi">body</span>.<span class="pl-smi">style</span>.<span class="pl-smi">backgroundColor</span> = colorCode;
+};</pre></div>
 <p>但是 switch 仍然带有大量我们可以不需要的样板文件和重复代码。</p>
 <h2>Lookup Table查找表</h2>
 <p>那么我们真正想要实现什么目标呢？我们需要将十六进制颜色代码分配给颜色名称，因此让我们创建一个将颜色名称作为键、将颜色代码作为值的对象。然后我们可以使用 object[key] 通过颜色名称查找颜色代码。我们需要一个默认值，因此如果没有找到键，则返回默认值的短三元数将在创建对象的默认部分时执行此操作。</p>
-<pre lang="javascript" class="notranslate"><code class="notranslate">const colorCodes = {
-	'blue'   : '#2196F3',
-	'green'  : '#4CAF50',
-	'orange' : '#FF9800',
-	'pink'   : '#E91E63',
-	'default': '#F44336'
-};
+<div class="highlight highlight-source-js"><pre class="notranslate"><span class="pl-k">const</span> <span class="pl-s1">colorCodes</span> <span class="pl-c1">=</span> <span class="pl-kos">{</span>
+	<span class="pl-s">'blue'</span>   : <span class="pl-s">'#2196F3'</span><span class="pl-kos">,</span>
+	<span class="pl-s">'green'</span>  : <span class="pl-s">'#4CAF50'</span><span class="pl-kos">,</span>
+	<span class="pl-s">'orange'</span> : <span class="pl-s">'#FF9800'</span><span class="pl-kos">,</span>
+	<span class="pl-s">'pink'</span>   : <span class="pl-s">'#E91E63'</span><span class="pl-kos">,</span>
+	<span class="pl-s">'default'</span>: <span class="pl-s">'#F44336'</span>
+<span class="pl-kos">}</span><span class="pl-kos">;</span>
 
-const setBackgroundColor = (colorName) =&gt; {
-	document.body.style.backgroundColor = colorCodes[colorName]
-		? colorCodes[colorName]
-		: colorCodes['default'];
-}; 
- 
-</code></pre>
+<span class="pl-k">const</span> <span class="pl-en">setBackgroundColor</span> <span class="pl-c1">=</span> <span class="pl-kos">(</span><span class="pl-s1">colorName</span><span class="pl-kos">)</span> <span class="pl-c1">=&gt;</span> <span class="pl-kos">{</span>
+	<span class="pl-smi">document</span><span class="pl-kos">.</span><span class="pl-c1">body</span><span class="pl-kos">.</span><span class="pl-c1">style</span><span class="pl-kos">.</span><span class="pl-c1">backgroundColor</span> <span class="pl-c1">=</span> <span class="pl-s1">colorCodes</span><span class="pl-kos">[</span><span class="pl-s1">colorName</span><span class="pl-kos">]</span>
+		? <span class="pl-s1">colorCodes</span><span class="pl-kos">[</span><span class="pl-s1">colorName</span><span class="pl-kos">]</span>
+		: <span class="pl-s1">colorCodes</span><span class="pl-kos">[</span><span class="pl-s">'default'</span><span class="pl-kos">]</span><span class="pl-kos">;</span>
+<span class="pl-kos">}</span><span class="pl-kos">;</span> 
+ </pre></div>
 <p>现在我们有了一个查找表，可以整齐地列出我们的输入和可能的输出。</p>
 <p>这并不是奇迹般地减少了“代码行数”(LOC)（我们从 15 行减少到 20 行，再减少到 12 行）。事实上，其中一些解决方案可能会增加您的 LOC，但我们提高了可维护性、易读性，并且实际上通过仅对默认回退进行一次逻辑检查来降低复杂性。</p>
 <h2>数据的交易逻辑</h2>
@@ -156,38 +151,36 @@ const setBackgroundColor = (colorName) =&gt; {
 <p>让我们将五个比较逻辑运算减少为一个，并将我们的值转换为数据。</p>
 <p>场景：我们需要将成绩百分比转换为对应的字母成绩。</p>
 <p>if/else 很简单；我们从上到下检查成绩是否高于或等于匹配字母成绩所需的成绩。</p>
-<pre lang="javascript" class="notranslate"><code class="notranslate">const getLetterGrade = (gradeAsPercent) =&gt; {
-	if(gradeAsPercent &gt;= 90) {
-		return "A";
-	} else if(gradeAsPercent &gt;= 80) {
-		return "B";
-	} else if(gradeAsPercent &gt;= 70) {
-		return "C";
-	} else if(gradeAsPercent &gt;= 60) {
-		return "D";
-	} else {
-		return "F"
-	};
-};
-</code></pre>
+<div class="highlight highlight-source-js"><pre class="notranslate"><span class="pl-k">const</span> <span class="pl-en">getLetterGrade</span> <span class="pl-c1">=</span> <span class="pl-kos">(</span><span class="pl-s1">gradeAsPercent</span><span class="pl-kos">)</span> <span class="pl-c1">=&gt;</span> <span class="pl-kos">{</span>
+	<span class="pl-k">if</span><span class="pl-kos">(</span><span class="pl-s1">gradeAsPercent</span> <span class="pl-c1">&gt;=</span> <span class="pl-c1">90</span><span class="pl-kos">)</span> <span class="pl-kos">{</span>
+		<span class="pl-k">return</span> <span class="pl-s">"A"</span><span class="pl-kos">;</span>
+	<span class="pl-kos">}</span> <span class="pl-k">else</span> <span class="pl-k">if</span><span class="pl-kos">(</span><span class="pl-s1">gradeAsPercent</span> <span class="pl-c1">&gt;=</span> <span class="pl-c1">80</span><span class="pl-kos">)</span> <span class="pl-kos">{</span>
+		<span class="pl-k">return</span> <span class="pl-s">"B"</span><span class="pl-kos">;</span>
+	<span class="pl-kos">}</span> <span class="pl-k">else</span> <span class="pl-k">if</span><span class="pl-kos">(</span><span class="pl-s1">gradeAsPercent</span> <span class="pl-c1">&gt;=</span> <span class="pl-c1">70</span><span class="pl-kos">)</span> <span class="pl-kos">{</span>
+		<span class="pl-k">return</span> <span class="pl-s">"C"</span><span class="pl-kos">;</span>
+	<span class="pl-kos">}</span> <span class="pl-k">else</span> <span class="pl-k">if</span><span class="pl-kos">(</span><span class="pl-s1">gradeAsPercent</span> <span class="pl-c1">&gt;=</span> <span class="pl-c1">60</span><span class="pl-kos">)</span> <span class="pl-kos">{</span>
+		<span class="pl-k">return</span> <span class="pl-s">"D"</span><span class="pl-kos">;</span>
+	<span class="pl-kos">}</span> <span class="pl-k">else</span> <span class="pl-kos">{</span>
+		<span class="pl-k">return</span> <span class="pl-s">"F"</span>
+	<span class="pl-kos">}</span><span class="pl-kos">;</span>
+<span class="pl-kos">}</span><span class="pl-kos">;</span></pre></div>
 <p>但我们一遍又一遍地重复相同的逻辑运算。</p>
 <p>因此，让我们将数据提取到一个数组中（以保留顺序）并将每个等级的可能性表示为一个对象。现在我们只需对对象进行一次 &gt;= 比较，并找到数组中第一个匹配的对象。</p>
-<pre lang="javascript" class="notranslate"><code class="notranslate">const gradeChart = [
-	{minpercent: 90, letter: 'A'},
-	{minpercent: 80, letter: 'B'},
-	{minpercent: 70, letter: 'C'},
-	{minpercent: 60, letter: 'D'},
-	{minpercent: 0,  letter: 'F'}
-];
+<div class="highlight highlight-source-js"><pre class="notranslate"><span class="pl-k">const</span> <span class="pl-s1">gradeChart</span> <span class="pl-c1">=</span> <span class="pl-kos">[</span>
+	<span class="pl-kos">{</span><span class="pl-c1">minpercent</span>: <span class="pl-c1">90</span><span class="pl-kos">,</span> <span class="pl-c1">letter</span>: <span class="pl-s">'A'</span><span class="pl-kos">}</span><span class="pl-kos">,</span>
+	<span class="pl-kos">{</span><span class="pl-c1">minpercent</span>: <span class="pl-c1">80</span><span class="pl-kos">,</span> <span class="pl-c1">letter</span>: <span class="pl-s">'B'</span><span class="pl-kos">}</span><span class="pl-kos">,</span>
+	<span class="pl-kos">{</span><span class="pl-c1">minpercent</span>: <span class="pl-c1">70</span><span class="pl-kos">,</span> <span class="pl-c1">letter</span>: <span class="pl-s">'C'</span><span class="pl-kos">}</span><span class="pl-kos">,</span>
+	<span class="pl-kos">{</span><span class="pl-c1">minpercent</span>: <span class="pl-c1">60</span><span class="pl-kos">,</span> <span class="pl-c1">letter</span>: <span class="pl-s">'D'</span><span class="pl-kos">}</span><span class="pl-kos">,</span>
+	<span class="pl-kos">{</span><span class="pl-c1">minpercent</span>: <span class="pl-c1">0</span><span class="pl-kos">,</span>  <span class="pl-c1">letter</span>: <span class="pl-s">'F'</span><span class="pl-kos">}</span>
+<span class="pl-kos">]</span><span class="pl-kos">;</span>
 
-const getLetterGrade = (gradeAsPercent) =&gt; {
-	const grade = gradeChart.find(
-		(grade) =&gt; gradeAsPercent &gt;= grade.minpercent
-	);
+<span class="pl-k">const</span> <span class="pl-en">getLetterGrade</span> <span class="pl-c1">=</span> <span class="pl-kos">(</span><span class="pl-s1">gradeAsPercent</span><span class="pl-kos">)</span> <span class="pl-c1">=&gt;</span> <span class="pl-kos">{</span>
+	<span class="pl-k">const</span> <span class="pl-s1">grade</span> <span class="pl-c1">=</span> <span class="pl-s1">gradeChart</span><span class="pl-kos">.</span><span class="pl-en">find</span><span class="pl-kos">(</span>
+		<span class="pl-kos">(</span><span class="pl-s1">grade</span><span class="pl-kos">)</span> <span class="pl-c1">=&gt;</span> <span class="pl-s1">gradeAsPercent</span> <span class="pl-c1">&gt;=</span> <span class="pl-s1">grade</span><span class="pl-kos">.</span><span class="pl-c1">minpercent</span>
+	<span class="pl-kos">)</span><span class="pl-kos">;</span>
 
-	return grade.letter;
-};
-</code></pre>
+	<span class="pl-k">return</span> <span class="pl-s1">grade</span><span class="pl-kos">.</span><span class="pl-c1">letter</span><span class="pl-kos">;</span>
+<span class="pl-kos">}</span><span class="pl-kos">;</span></pre></div>
 <h2>开始将您的比较想象为数据</h2>
 <p>当您需要比较或“检查”值时，很自然地会使用 if/else ，这样您就可以口头逐步解决问题。但下次尝试考虑如何将您的值表示为数据，并简化您的逻辑以解释该数据。</p>
 <p>您的代码最终将变得更具可读性、可维护性和目的性，并且其所代表的概念清晰分离。这里的所有代码示例都有效，但正确的方法可以将 It Works™ 代码变成“非常适合使用”的代码。</p></div>
@@ -195,7 +188,7 @@ const getLetterGrade = (gradeAsPercent) =&gt; {
 <button class="btn btn-block" type="button" onclick="openComments()" id="cmButton">评论</button>
 <div class="comments" id="comments"></div>
 </div>
-    <div id="footer">Copyright © <span id="year"></span><a href="https://ileyfung.github.io"> leyfung </a>
+    <div id="footer">Copyright © <span id="year"></span><a href="https://jlifeng.github.io/ileyfung.github.io"> leyfung </a>
 <p>
 <span id="runday"></span>Powered by <a href="https://meekdai.com/Gmeek.html" target="_blank">Gmeek</a>
 </p>
@@ -259,7 +252,7 @@ function openComments(){
 
     script=document.createElement("script");
     script.setAttribute("src","https://utteranc.es/client.js");
-    script.setAttribute("repo","ileyfung/ileyfung.github.io");
+    script.setAttribute("repo","jlifeng/ileyfung.github.io");
     script.setAttribute("issue-term","title");
     
     if(localStorage.getItem("meek_theme")=="dark"){script.setAttribute("theme","dark-blue");}
