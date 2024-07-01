@@ -4,7 +4,7 @@
     <meta content="text/html; charset=utf-8" http-equiv="content-type" />
     <meta name="viewport" content="width=device-width,initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <link href="//cdn.staticfile.net/Primer/21.0.7/primer.css" rel="stylesheet" />
+    <link href='https://mirrors.sustech.edu.cn/cdnjs/ajax/libs/Primer/21.0.7/primer.css' rel='stylesheet' />
     <link rel="icon" href="https://github.githubassets.com/favicons/favicon.svg"><script>
         let theme = localStorage.getItem("meek_theme") || "light";
         document.documentElement.setAttribute("data-color-mode", theme);
@@ -185,8 +185,10 @@ console.log(greaterThanFive); <span class="pl-c"><span class="pl-c">//</span> 'y
 <p>当您需要比较或“检查”值时，很自然地会使用 if/else ，这样您就可以口头逐步解决问题。但下次尝试考虑如何将您的值表示为数据，并简化您的逻辑以解释该数据。</p>
 <p>您的代码最终将变得更具可读性、可维护性和目的性，并且其所代表的概念清晰分离。这里的所有代码示例都有效，但正确的方法可以将 It Works™ 代码变成“非常适合使用”的代码。</p></div>
 <div style="font-size:small;margin-top:8px;float:right;"></div>
+
 <button class="btn btn-block" type="button" onclick="openComments()" id="cmButton">评论</button>
 <div class="comments" id="comments"></div>
+
 </div>
     <div id="footer">Copyright © <span id="year"></span><a href="https://jlifeng.github.io/ileyfung.github.io"> leyfung </a>
 <p>
@@ -241,6 +243,8 @@ console.log("\n %c Gmeek last https://github.com/Meekdai/Gmeek \n\n","padding:5p
 <script>
 document.getElementById("pathHome").setAttribute("d",IconList["home"]);
 document.getElementById("pathIssue").setAttribute("d",IconList["github"]);
+
+
 
 function openComments(){
     cm=document.getElementById("comments");
