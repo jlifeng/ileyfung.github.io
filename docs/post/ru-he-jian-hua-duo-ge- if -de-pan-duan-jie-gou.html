@@ -94,51 +94,51 @@ body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;
 <h2>等等，什么是三元？</h2>
 <p>我已经知道了，我们跳过这个吧。<br>
 三元数与 if/else 并不是革命性的区别，因为它们都是条件运算，但三元数确实返回一个值，因此可以直接在赋值中使用它。</p>
-<div class="highlight highlight-source-c++"><pre class="notranslate">const greaterThanFive = (8 &gt; 5) ? 'yep' : 'nope';
+<div class="highlight highlight-source-c++"><pre class="notranslate"><span class="pl-k">const</span> greaterThanFive = (<span class="pl-c1">8</span> &gt; <span class="pl-c1">5</span>) ? <span class="pl-s"><span class="pl-pds">'</span>yep<span class="pl-pds">'</span></span> : <span class="pl-s"><span class="pl-pds">'</span>nope<span class="pl-pds">'</span></span>;
 
-console.log(greaterThanFive); // 'yep'</pre></div>
+console.log(greaterThanFive); <span class="pl-c"><span class="pl-c">//</span> 'yep'</span></pre></div>
 <p>基本模式只是一个条件，如果为真则返回一个值，如果为假则返回一个值。</p>
 <div class="highlight highlight-source-c++"><pre class="notranslate">(condition) ? isTruthy : isFalsy</pre></div>
 <h2>If/Else 的替代方案</h2>
 <p>让我们从一个场景开始，逐步了解不同解决方案的示例。</p>
 <p>我们将从用户输入中获取颜色，并需要将它们转换为一些预设的颜色代码来匹配，以便我们可以更改背景颜色。因此，我们将检查颜色名称字符串，并在匹配时设置颜色代码。</p>
-<div class="highlight highlight-source-c++"><pre class="notranslate">const setBackgroundColor = (colorName) =&gt; {
-	let colorCode = '';
-	if(colorName === 'blue') {
-		colorCode = '#2196F3';
-	} else if(colorName === 'green') {
-		colorCode = '#4CAF50';
-	} else if(colorName === 'orange') {
-		colorCode = '#FF9800';
-	} else if(colorName === 'pink') {
-		colorCode = '#E91E63';
-	} else {
-		colorCode = '#F44336';
+<div class="highlight highlight-source-c++"><pre class="notranslate"><span class="pl-k">const</span> setBackgroundColor = (colorName) =&gt; {
+	let colorCode = <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span>;
+	<span class="pl-k">if</span>(colorName === <span class="pl-s"><span class="pl-pds">'</span>blue<span class="pl-pds">'</span></span>) {
+		colorCode = <span class="pl-s"><span class="pl-pds">'</span>#2196F3<span class="pl-pds">'</span></span>;
+	} <span class="pl-k">else</span> <span class="pl-k">if</span>(colorName === <span class="pl-s"><span class="pl-pds">'</span>green<span class="pl-pds">'</span></span>) {
+		colorCode = <span class="pl-s"><span class="pl-pds">'</span>#4CAF50<span class="pl-pds">'</span></span>;
+	} <span class="pl-k">else</span> <span class="pl-k">if</span>(colorName === <span class="pl-s"><span class="pl-pds">'</span>orange<span class="pl-pds">'</span></span>) {
+		colorCode = <span class="pl-s"><span class="pl-pds">'</span>#FF9800<span class="pl-pds">'</span></span>;
+	} <span class="pl-k">else</span> <span class="pl-k">if</span>(colorName === <span class="pl-s"><span class="pl-pds">'</span>pink<span class="pl-pds">'</span></span>) {
+		colorCode = <span class="pl-s"><span class="pl-pds">'</span>#E91E63<span class="pl-pds">'</span></span>;
+	} <span class="pl-k">else</span> {
+		colorCode = <span class="pl-s"><span class="pl-pds">'</span>#F44336<span class="pl-pds">'</span></span>;
 	};
-	document.body.style.backgroundColor = colorCode;
+	document.<span class="pl-smi">body</span>.<span class="pl-smi">style</span>.<span class="pl-smi">backgroundColor</span> = colorCode;
 };</pre></div>
 <p>这个 if/else 就完成了工作。但是我们背负着大量重复逻辑比较 colorName 和重复赋值 colorCode 。</p>
 <h2>Switch</h2>
 <p>现在我们可以更恰当地将其更改为 switch 语句。它更符合我们正在尝试做的事情的概念；我们有几种想要匹配的字符串情况，如果没有一种情况匹配，则有一个默认值。</p>
-<div class="highlight highlight-source-c++"><pre class="notranslate">const setBackgroundColor = (colorName) =&gt; {
-	let colorCode = '';
-	switch(colorName) {
-		case 'blue':
-			colorCode = '#2196F3';
-			break;
-		case 'green':
-			colorCode = '#4CAF50';
-			break;
-		case 'orange':
-			colorCode = '#FF9800';
-			break;
-		case 'pink':
-			colorCode = '#E91E63';
-			break;
-		default:
-			colorCode = '#f44336';
+<div class="highlight highlight-source-c++"><pre class="notranslate"><span class="pl-k">const</span> setBackgroundColor = (colorName) =&gt; {
+	let colorCode = <span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span>;
+	<span class="pl-k">switch</span>(colorName) {
+		<span class="pl-k">case</span> <span class="pl-s"><span class="pl-pds">'</span>blue<span class="pl-pds">'</span></span>:
+			colorCode = <span class="pl-s"><span class="pl-pds">'</span>#2196F3<span class="pl-pds">'</span></span>;
+			<span class="pl-k">break</span>;
+		<span class="pl-k">case</span> <span class="pl-s"><span class="pl-pds">'</span>green<span class="pl-pds">'</span></span>:
+			colorCode = <span class="pl-s"><span class="pl-pds">'</span>#4CAF50<span class="pl-pds">'</span></span>;
+			<span class="pl-k">break</span>;
+		<span class="pl-k">case</span> <span class="pl-s"><span class="pl-pds">'</span>orange<span class="pl-pds">'</span></span>:
+			colorCode = <span class="pl-s"><span class="pl-pds">'</span>#FF9800<span class="pl-pds">'</span></span>;
+			<span class="pl-k">break</span>;
+		<span class="pl-k">case</span> <span class="pl-s"><span class="pl-pds">'</span>pink<span class="pl-pds">'</span></span>:
+			colorCode = <span class="pl-s"><span class="pl-pds">'</span>#E91E63<span class="pl-pds">'</span></span>;
+			<span class="pl-k">break</span>;
+		<span class="pl-k">default</span>:
+			colorCode = <span class="pl-s"><span class="pl-pds">'</span>#f44336<span class="pl-pds">'</span></span>;
 	};
-	document.body.style.backgroundColor = colorCode;
+	document.<span class="pl-smi">body</span>.<span class="pl-smi">style</span>.<span class="pl-smi">backgroundColor</span> = colorCode;
 };</pre></div>
 <p>但是 switch 仍然带有大量我们可以不需要的样板文件和重复代码。</p>
 <h2>Lookup Table查找表</h2>
